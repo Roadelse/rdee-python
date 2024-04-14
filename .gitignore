@@ -1,0 +1,6 @@
+
+/deploy/package/
+__pycache__/
+*egg-info/
+
+wf.*.md
