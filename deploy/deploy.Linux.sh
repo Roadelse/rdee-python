@@ -274,9 +274,9 @@ else
     #@ .test-install
     progress "deploy via install mode"
     if [[ $verbose == 1 ]]; then
-        ./deploy.Linux.sh
+        bash ./deploy.Linux.sh
     else
-        ./deploy.Linux.sh >&/dev/null
+        bash ./deploy.Linux.sh >&/dev/null
     fi
     if [[ $? != 0 ]]; then
         error1utest "Failed to deploy rdee-python via default install deploy-mode"
@@ -292,7 +292,7 @@ else
     progress "deploy via append mode"
 
     export PYTHONPATH=$scriptDir/tools
-    ./deploy.Linux.sh -d append >&/dev/null
+    bash ./deploy.Linux.sh -d append >&/dev/null
     python -c "import rdee"
     if [[ $? != 0 ]]; then
         error1utest "Failed to deploy rdee-python via default install deploy-mode"
@@ -304,11 +304,11 @@ else
     #@ .test-setenv
     progress "deploy via setenv mode"
 
-    ./deploy.Linux.sh -d setenv >&/dev/null
+    bash ./deploy.Linux.sh -d setenv >&/dev/null
     if [[ ! -e $scriptDir/package/setenv.rdee-python.sh ]]; then
         error1utest "Failed to deploy rdee-python via setenv deploy-mode"
     fi
-    ./deploy.Linux.sh -d setenv -p test.sh >&/dev/null
+    bash ./deploy.Linux.sh -d setenv -p test.sh >&/dev/null
     . test.sh
     python -c "import rdee"
     if [[ $? != 0 ]]; then
@@ -322,11 +322,11 @@ else
     #@ .test-setenv+
     progress "deploy via setenv+ mode"
 
-    ./deploy.Linux.sh -d setenv+ >&/dev/null
+    bash ./deploy.Linux.sh -d setenv+ >&/dev/null
     if [[ $? -eq 0 ]]; then
         error1utest "Failed to deploy rdee-python via setenv+ deploy-mode, no -p ... but script exit with 0"
     fi
-    ./deploy.Linux.sh -d setenv+ -p test2.sh >&/dev/null
+    bash ./deploy.Linux.sh -d setenv+ -p test2.sh >&/dev/null
     . test2.sh
     python -c "import rdee"
     if [[ $? != 0 ]]; then
@@ -340,12 +340,12 @@ else
     #@ .test-module
     progress "deploy via module mode"
 
-    ./deploy.Linux.sh -d module >&/dev/null
+    bash ./deploy.Linux.sh -d module >&/dev/null
     if [[ ! -e $scriptDir/package/modulefiles ]]; then
         error1utest "Failed to deploy rdee-python via module deploy-mode"
     fi
     if module list 2>/dev/null; then
-        ./deploy.Linux.sh -d module -p test2.sh >&/dev/null
+        bash ./deploy.Linux.sh -d module -p test2.sh >&/dev/null
         . test2.sh
         module load rdee
         python -c "import rdee"
@@ -360,7 +360,7 @@ else
     #@ .test-module+
     progress "deploy via module+ mode"
 
-    ./deploy.Linux.sh -d module+ -m tools >&/dev/null
+    bash ./deploy.Linux.sh -d module+ -m tools >&/dev/null
     if [[ ! -d tools/rdee-python ]]; then
         error1utest "Failed to deploy rdee-python via module+ deploy-mode"
     fi
