@@ -23,11 +23,11 @@ workDir=$PWD
 
 #@ .preliminary-functions
 function error() {
-    echo '\033[31m'"$1"'\033[0m'
+    echo -e '\033[31m'"$1"'\033[0m'
     exit 101
 }
 function success() {
-    echo '\033[32m'"$1"'\033[0m'
+    echo -e '\033[32m'"$1"'\033[0m'
 }
 function pathDep() {
     if [[ -z $1 ]]; then
@@ -146,7 +146,7 @@ EOF
             python $scriptDir/tools/fileop.ra-block.py $profile .temp.rdee-python
             rm -f .temp.rdee-python
         else
-            sucess "Succeed to generate setenv script: $scriptDir/package/setenv.rdee.sh"
+            success "Succeed to generate setenv script: $scriptDir/package/setenv.rdee.sh"
         fi
     elif [[ $deploy_mode == "setenv+" ]]; then
         if [[ -z $profile ]]; then
