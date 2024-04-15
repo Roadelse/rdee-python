@@ -18,4 +18,4 @@ jobs:
 
     - name: Execute test script
       run: |
-        bash deploy/deploy.Linux.sh -u
+        bash deploy/deploy.Linux.sh -uv

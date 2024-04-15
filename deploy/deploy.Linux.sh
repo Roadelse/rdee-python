@@ -80,8 +80,9 @@ profile=
 show_help=0
 modulepath=
 utest=0
+verbose=0
 #@ <..resolve>
-while getopts "hd:p:m:u" arg; do
+while getopts "hd:p:m:uv" arg; do
     case $arg in
     h)
         show_help=1
@@ -98,7 +99,12 @@ while getopts "hd:p:m:u" arg; do
     m)
         modulepath=$OPTARG
         ;;
-    ?) ;;
+    v)
+        verbose=1
+        ;;
+    ?)
+        error "Unknown option: $OPTARG"
+        ;;
     esac
 done
 
@@ -246,7 +252,13 @@ else
     # condaroot=$(conda info | grep location | cut -d':' -f2)
     condaroot=$(dirname $(dirname $(which conda)))
     . $condaroot/etc/profile.d/conda.sh
-    conda create -n depTest python=3.12 -y >&/dev/null
+
+    if [[ $verbose == 1 ]]; then
+        conda create -n depTest python=3.12 -y
+    else
+        conda create -n depTest python=3.12 -y >&/dev/null
+    fi
+
     if [[ $? != 0 ]]; then
         error "Failed to create depTest conda environment! Please check the current env-info manually!"
     fi
@@ -261,10 +273,17 @@ else
 
     #@ .test-install
     progress "deploy via install mode"
-    ./deploy.Linux.sh >&/dev/null
-    python -c "import rdee"
+    if [[ $verbose == 1 ]]; then
+        ./deploy.Linux.sh
+    else
+        ./deploy.Linux.sh >&/dev/null
+    fi
     if [[ $? != 0 ]]; then
         error1utest "Failed to deploy rdee-python via default install deploy-mode"
+    fi
+    python -c "import rdee"
+    if [[ $? != 0 ]]; then
+        error1utest "Failed to import rdee via default install deploy-mode"
     fi
     success "install mode passed"
     pip uninstall rdee -y >&/dev/null
