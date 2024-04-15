@@ -12,9 +12,6 @@
 # 2024-01-08  Roadelse  Initialized                                           #
 ###############################################################################
 
-
-
-
 #@ Prepare
 #@ .
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
@@ -25,22 +22,22 @@ scriptDir=$(cd $(dirname "${BASH_SOURCE[0]}") && readlink -f .)
 workDir=$PWD
 
 #@ .preliminary-functions
-function error(){
-	echo '\033[31m'"$1"'\033[0m'
+function error() {
+    echo '\033[31m'"$1"'\033[0m'
     exit 101
 }
-function success(){
-	echo '\033[32m'"$1"'\033[0m'
+function success() {
+    echo '\033[32m'"$1"'\033[0m'
 }
-function pathDep(){
+function pathDep() {
     if [[ -z $1 ]]; then
         return -1
     fi
     depth=$(echo "$1" | grep -o '/' | wc -l)
     echo $depth
 }
-function get_pypath(){
-    IFS=: read -ra pypaths <<< $PYTHONPATH
+function get_pypath() {
+    IFS=: read -ra pypaths <<<$PYTHONPATH
     minDepth=999
     rstPath=
     for pp in "${pypaths[@]}"; do
@@ -56,42 +53,37 @@ function get_pypath(){
     echo $rstPath
 }
 
-
-
 #@ <.pre-check>
 #@ <..python3>
-if [[ -z `which python 2>/dev/null` ]]; then
-	error "Error! Cannot find python interpreter"
+if [[ -z $(which python 2>/dev/null) ]]; then
+    error "Error! Cannot find python interpreter"
 fi
 pyver=$(python --version | cut -d' ' -f2)
-min_pyver=`cat $scriptDir/../MIN_PYTHON_VERSION`
+min_pyver=$(cat $scriptDir/../MIN_PYTHON_VERSION)
 if [[ $(echo $pyver | cut -d. -f1) != $(echo $min_pyver | cut -d. -f1) || $(echo $pyver | cut -d. -f2) -lt $(echo $min_pyver | cut -d. -f2) ]]; then
     error "Error! Python version is too old: $pyver, while out requirement is at least 3.6"
 fi
-
 
 #@ <.arguments>
 #@ <..default>
 deploy_mode="install"
 profile=
 show_help=0
-output=$scriptDir
 #@ <..resolve>
-while getopts "ht:p:o:" arg; do
+while getopts "hd:p:" arg; do
     case $arg in
     h)
-        show_help=1;;
-    d)
-        deploy_mode=$OPTARG;;
-    p)
-        profile=$OPTARG;;
-    o)
-        output=$OPTARG;;
-    ?)
+        show_help=1
         ;;
+    d)
+        deploy_mode=$OPTARG
+        ;;
+    p)
+        profile=$OPTARG
+        ;;
+    ?) ;;
     esac
 done
-
 
 #@ .help
 if [[ $show_help == 1 ]]; then
@@ -102,7 +94,7 @@ deploy.Linux.sh [options]
     ● -h
         show this information
     ● -d deploy_mode
-        select deployment target, supporting install, setenv, setenv+, module, module+
+        select deployment target, supporting install, append, setenv, setenv+, module, module+
     ● -p profile
         select profile to be added
 "
@@ -110,8 +102,7 @@ deploy.Linux.sh [options]
 fi
 
 #@ .dependent-variables
-VERSION=`cat $scriptDir/../VERSION`
-
+VERSION=$(cat $scriptDir/../VERSION)
 
 if [[ $deploy_mode == "install" ]]; then
     if [[ -n "$(pip freeze | grep -P '^rdee')" ]]; then
@@ -131,23 +122,23 @@ if [[ $deploy_mode == "install" ]]; then
         error "Error! Failed to install rdee-python in $(which python)"
     fi
 elif [[ $deploy_mode == "append" ]]; then
-        targetDir=$(get_pypath)
-        if [[ -z "$targetDir" ]]; then
-            error "Error! Cannot find valid path in env:PYTHONPATH to append, use other deploy_mode either"
-        fi
-        ln -s $scriptDir/../src $targetDir/rdee
-        success "Succeed to append rdee-python in existed PYTHONPATH: $targetDir"
+    targetDir=$(get_pypath)
+    if [[ -z "$targetDir" ]]; then
+        error "Error! Cannot find valid path in env:PYTHONPATH to append, use other deploy_mode either"
+    fi
+    ln -s $scriptDir/../src/rdee $targetDir/rdee
+    success "Succeed to append rdee-python in existed PYTHONPATH: $targetDir"
 else
     mkdir -p $scriptDir/package
-    ln -sf $scriptDir/../src $scriptDir/package/rdee
+    ln -sf $scriptDir/../src/rdee $scriptDir/package/rdee
     text_setenv="# >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee-python]
 export PYTHONPATH=${scriptDir}/package:\$PYTHONPATH
 
 "
     if [[ $deploy_mode == "setenv" ]]; then
-        echo "$text_setenv" > $scriptDir/package/setenv.rdee.sh
+        echo "$text_setenv" >$scriptDir/package/setenv.rdee.sh
         if [[ -n $profile ]]; then
-            cat << EOF >> .temp.rdee-python
+            cat <<EOF >>.temp.rdee-python
 # >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee-python]
 source $scriptDir/package/setenv.rdee.sh
 
@@ -161,13 +152,13 @@ EOF
         if [[ -z $profile ]]; then
             error "Error! Must provide profile in setenv+ deploy mode"
         fi
-        echo "$text_setenv" > .temp.rdee-python
+        echo "$text_setenv" >.temp.rdee-python
         python $scriptDir/tools/fileop.ra-block.py $profile .temp.rdee-python
         success "Succeed to add setenv statements in $profile"
     elif [[ $deploy_mode =~ "module" ]]; then
         mkdir -p $scriptDir/package/modulefiles
         rm $scriptDir/package/modulefiles/*
-        cat << EOF > $script/package/modulefiles/$VERSION
+        cat <<EOF >$script/package/modulefiles/$VERSION
 #%Module1.0
 
 prepend-path PYTHONPATH $scriptDir/package
@@ -176,7 +167,7 @@ EOF
         success "Succeed to generate modulefile in $scriptDir/package/modulefile"
 
         if [[ $deploy_mode == "module" && -n "$profile" ]]; then
-            cat << EOF >> .temp.rdee-python
+            cat <<EOF >>.temp.rdee-python
 # >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee-python]
 module use $scriptDir/package/modulefile
 
