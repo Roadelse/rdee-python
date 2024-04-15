@@ -353,8 +353,8 @@ else
             error1utest "Failed to deploy rdee-python via module deploy-mode with profile together"
         fi
         module unload rdee
+        rm test2.sh
     fi
-    rm test2.sh
     success "module mode passed"
 
     #@ .test-module+
