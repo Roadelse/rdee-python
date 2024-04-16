@@ -154,21 +154,21 @@ if [[ $utest == 0 ]]; then
         ln -sfT $scriptDir/../src/rdee $targetDir/rdee
         success "Succeed to append rdee-python in existed PYTHONPATH: $targetDir"
     else
-        mkdir -p $scriptDir/package
-        ln -sfT $scriptDir/../src/rdee $scriptDir/package/rdee
+        mkdir -p $scriptDir/export
+        ln -sfT $scriptDir/../src/rdee $scriptDir/export/rdee
         text_setenv="# >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee-python]
-export PYTHONPATH=${scriptDir}/package:\$PYTHONPATH
+export PYTHONPATH=${scriptDir}/export:\$PYTHONPATH
 
 "
         if [[ $deploy_mode == "setenv" ]]; then
-            echo "$text_setenv" >$scriptDir/package/setenv.rdee-python.sh
+            echo "$text_setenv" >$scriptDir/export/setenv.rdee-python.sh
             if [[ -e $scriptDir/../src/rdee/rdee ]]; then echo "occccccccccccccccccur"; fi
-            success "Succeed to generate setenv script: $scriptDir/package/setenv.rdee-python.sh"
+            success "Succeed to generate setenv script: $scriptDir/export/setenv.rdee-python.sh"
 
             if [[ -n $profile ]]; then
                 cat <<EOF >.temp.rdee-python
 # >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee-python]
-source $scriptDir/package/setenv.rdee-python.sh
+source $scriptDir/export/setenv.rdee-python.sh
 
 EOF
                 python $scriptDir/tools/fileop.ra-block.py $profile .temp.rdee-python
@@ -196,20 +196,20 @@ EOF
             rm -f .temp.rdee-python
 
         elif [[ $deploy_mode =~ "module" ]]; then
-            mkdir -p $scriptDir/package/modulefiles
-            rm $scriptDir/package/modulefiles/*
-            cat <<EOF >$scriptDir/package/modulefiles/$VERSION
+            mkdir -p $scriptDir/export/modulefiles
+            rm $scriptDir/export/modulefiles/*
+            cat <<EOF >$scriptDir/export/modulefiles/default
 #%Module1.0
 
-prepend-path PYTHONPATH $scriptDir/package
+prepend-path PYTHONPATH $scriptDir/export
 
 EOF
-            success "Succeed to generate modulefile in $scriptDir/package/modulefile"
+            success "Succeed to generate modulefile in $scriptDir/export/modulefile"
 
             if [[ $deploy_mode == "module" && -n "$profile" ]]; then
                 cat <<EOF >.temp.rdee-python
 # >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee-python]
-module use $scriptDir/package/modulefiles
+module use $scriptDir/export/modulefiles
 
 EOF
                 python $scriptDir/tools/fileop.ra-block.py $profile .temp.rdee-python
@@ -227,7 +227,7 @@ EOF
                 if [[ ! -d "$modulepath" ]]; then
                     error "modulepath must be an existed directory"
                 fi
-                ln -sfT $scriptDir/package/modulefiles $modulepath/rdee-python
+                ln -sfT $scriptDir/export/modulefiles $modulepath/rdee-python
                 if [[ $? -eq 0 ]]; then
                     success "Succeed to put modulefiles into modulepath=$modulepath"
                 else
@@ -305,7 +305,7 @@ else
     progress "deploy via setenv mode"
 
     bash ./deploy.Linux.sh -d setenv >&/dev/null
-    if [[ ! -e $scriptDir/package/setenv.rdee-python.sh ]]; then
+    if [[ ! -e $scriptDir/export/setenv.rdee-python.sh ]]; then
         error1utest "Failed to deploy rdee-python via setenv deploy-mode"
     fi
     bash ./deploy.Linux.sh -d setenv -p test.sh >&/dev/null
@@ -316,7 +316,7 @@ else
     fi
     success "setenv mode passed"
     unset PYTHONPATH
-    rm -rf package
+    rm -rf export
     rm test.sh
 
     #@ .test-setenv+
@@ -334,14 +334,14 @@ else
     fi
     success "setenv+ mode passed"
     unset PYTHONPATH
-    rm -rf package
+    rm -rf export
     rm test2.sh
 
     #@ .test-module
     progress "deploy via module mode"
 
     bash ./deploy.Linux.sh -d module >&/dev/null
-    if [[ ! -e $scriptDir/package/modulefiles ]]; then
+    if [[ ! -e $scriptDir/export/modulefiles ]]; then
         error1utest "Failed to deploy rdee-python via module deploy-mode"
     fi
     if module list 2>/dev/null; then
@@ -367,5 +367,5 @@ else
     rm -f tools/rdee-python
     success "module+ mode passed"
 
-    rm -rf package
+    rm -rf export
 fi
