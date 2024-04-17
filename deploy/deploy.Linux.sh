@@ -126,6 +126,7 @@ fi
 
 #@ .dependent-variables
 VERSION=$(cat $scriptDir/../VERSION)
+proj=$(basename $(realpath $scriptDir/..))
 
 #@ Core
 if [[ $utest == 0 ]]; then
@@ -142,9 +143,9 @@ if [[ $utest == 0 ]]; then
         cd $scriptDir/..
         pip install -e . -i https://pypi.tuna.tsinghua.edu.cn/simple
         if [[ $? -eq 0 ]]; then
-            success "Successfully install rdee-python in $(which python)"
+            success "Successfully install $proj in $(which python)"
         else
-            error "Failed to install rdee-python in $(which python)"
+            error "Failed to install $proj in $(which python)"
         fi
     elif [[ $deploy_mode == "append" ]]; then
         targetDir=$(get_pypath)
@@ -152,33 +153,33 @@ if [[ $utest == 0 ]]; then
             error "Cannot find valid path in env:PYTHONPATH to append, use other deploy_mode either"
         fi
         ln -sfT $scriptDir/../src/rdee $targetDir/rdee
-        success "Succeed to append rdee-python in existed PYTHONPATH: $targetDir"
+        success "Succeed to append $proj in existed PYTHONPATH: $targetDir"
     else
         mkdir -p $scriptDir/export
         ln -sfT $scriptDir/../src/rdee $scriptDir/export/rdee
-        text_setenv="# >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee-python]
+        text_setenv="# >>>>>>>>>>>>>>>>>>>>>>>>>>> [$proj]
 export PYTHONPATH=${scriptDir}/export:\$PYTHONPATH
 
 "
         if [[ $deploy_mode == "setenv" ]]; then
-            echo "$text_setenv" >$scriptDir/export/setenv.rdee-python.sh
+            echo "$text_setenv" >$scriptDir/export/setenv.$proj.sh
             if [[ -e $scriptDir/../src/rdee/rdee ]]; then echo "occccccccccccccccccur"; fi
-            success "Succeed to generate setenv script: $scriptDir/export/setenv.rdee-python.sh"
+            success "Succeed to generate setenv script: $scriptDir/export/setenv.$proj.sh"
 
             if [[ -n $profile ]]; then
-                cat <<EOF >.temp.rdee-python
-# >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee-python]
-source $scriptDir/export/setenv.rdee-python.sh
+                cat <<EOF >.temp.$proj
+# >>>>>>>>>>>>>>>>>>>>>>>>>>> [$proj]
+source $scriptDir/export/setenv.$proj.sh
 
 EOF
-                python $scriptDir/tools/fileop.ra-block.py $profile .temp.rdee-python
+                python $scriptDir/tools/fileop.ra-block.py $profile .temp.$proj
 
                 if [[ $? -eq 0 ]]; then
                     success "Succeed to add source statements in $profile"
                 else
                     error "Failed add source statements in $profile"
                 fi
-                rm -f .temp.rdee-python
+                rm -f .temp.$proj
             fi
             if [[ -e $scriptDir/../src/rdee/rdee ]]; then echo "11111111111111111111"; fi
 
@@ -186,39 +187,38 @@ EOF
             if [[ -z $profile ]]; then
                 error "Must provide profile in setenv+ deploy mode"
             fi
-            echo "$text_setenv" >.temp.rdee-python
-            python $scriptDir/tools/fileop.ra-block.py $profile .temp.rdee-python
+            echo "$text_setenv" >.temp.$proj
+            python $scriptDir/tools/fileop.ra-block.py $profile .temp.$proj
             if [[ $? -eq 0 ]]; then
                 success "Succeed to add setenv statements in $profile"
             else
                 error "Failed to add setenv statements in $profile"
             fi
-            rm -f .temp.rdee-python
+            rm -f .temp.$proj
 
         elif [[ $deploy_mode =~ "module" ]]; then
-            mkdir -p $scriptDir/export/modulefiles
-            rm $scriptDir/export/modulefiles/*
-            cat <<EOF >$scriptDir/export/modulefiles/default
+            mkdir -p $scriptDir/export/modulefiles/$proj
+            cat <<EOF >$scriptDir/export/modulefiles/$proj/default
 #%Module1.0
 
 prepend-path PYTHONPATH $scriptDir/export
 
 EOF
-            success "Succeed to generate modulefile in $scriptDir/export/modulefile"
+            success "Succeed to generate modulefile in $scriptDir/export/modulefiles"
 
             if [[ $deploy_mode == "module" && -n "$profile" ]]; then
-                cat <<EOF >.temp.rdee-python
-# >>>>>>>>>>>>>>>>>>>>>>>>>>> [rdee-python]
+                cat <<EOF >.temp.$proj
+# >>>>>>>>>>>>>>>>>>>>>>>>>>> [$proj]
 module use $scriptDir/export/modulefiles
 
 EOF
-                python $scriptDir/tools/fileop.ra-block.py $profile .temp.rdee-python
+                python $scriptDir/tools/fileop.ra-block.py $profile .temp.$proj
                 if [[ $? -eq 0 ]]; then
                     success "Succeed to add 'module use' statements in $profile"
                 else
                     error "Failed to add 'module use' statements in $profile"
                 fi
-                rm -f .temp.rdee-python
+                rm -f .temp.$proj
 
             elif [[ $deploy_mode == "module+" ]]; then
                 if [[ -z "$modulepath" ]]; then
@@ -227,7 +227,7 @@ EOF
                 if [[ ! -d "$modulepath" ]]; then
                     error "modulepath must be an existed directory"
                 fi
-                ln -sfT $scriptDir/export/modulefiles $modulepath/rdee-python
+                ln -sfT $scriptDir/export/modulefiles/$proj $modulepath/$proj
                 if [[ $? -eq 0 ]]; then
                     success "Succeed to put modulefiles into modulepath=$modulepath"
                 else
@@ -241,6 +241,7 @@ EOF
 
 else
     progress "Start unit test for deployment ..."
+    testCommand='python -c "import rdee"'
     #@ utest
     if [[ -z "$(which conda)" ]]; then
         error "Unit test for deployment requireds conda environment"
@@ -279,7 +280,7 @@ else
         bash ./deploy.Linux.sh >&/dev/null
     fi
     if [[ $? != 0 ]]; then
-        error1utest "Failed to deploy rdee-python via default install deploy-mode"
+        error1utest "Failed to deploy $proj via default install deploy-mode"
     fi
     python -c "import rdee"
     if [[ $? != 0 ]]; then
@@ -295,7 +296,7 @@ else
     bash ./deploy.Linux.sh -d append >&/dev/null
     python -c "import rdee"
     if [[ $? != 0 ]]; then
-        error1utest "Failed to deploy rdee-python via default install deploy-mode"
+        error1utest "Failed to deploy $proj via default install deploy-mode"
     fi
     success "append mode passed"
     rm -f $scriptDir/tools/rdee
@@ -305,54 +306,64 @@ else
     progress "deploy via setenv mode"
 
     bash ./deploy.Linux.sh -d setenv >&/dev/null
-    if [[ ! -e $scriptDir/export/setenv.rdee-python.sh ]]; then
-        error1utest "Failed to deploy rdee-python via setenv deploy-mode"
+    if [[ ! -e $scriptDir/export/setenv.$proj.sh ]]; then
+        error1utest "Failed to deploy $proj via setenv deploy-mode"
     fi
     bash ./deploy.Linux.sh -d setenv -p test.sh >&/dev/null
-    . test.sh
-    python -c "import rdee"
     if [[ $? != 0 ]]; then
-        error1utest "Failed to deploy rdee-python via setenv deploy-mode with profile together"
+        error1utest "Failed to deploy $proj via setenv deploy-mode with profile together"
+    fi
+    . test.sh
+    eval $testCommand
+    if [[ $? != 0 ]]; then
+        error1utest "Failed to load $proj via setenv deploy-mode with profile together"
     fi
     success "setenv mode passed"
-    unset PYTHONPATH
     rm -rf export
     rm test.sh
+
+    unset PYTHONPATH
 
     #@ .test-setenv+
     progress "deploy via setenv+ mode"
 
     bash ./deploy.Linux.sh -d setenv+ >&/dev/null
     if [[ $? -eq 0 ]]; then
-        error1utest "Failed to deploy rdee-python via setenv+ deploy-mode, no -p ... but script exit with 0"
+        error1utest "Failed to deploy $proj via setenv+ deploy-mode, no -p ... but script exit with 0"
     fi
+
     bash ./deploy.Linux.sh -d setenv+ -p test2.sh >&/dev/null
-    . test2.sh
-    python -c "import rdee"
     if [[ $? != 0 ]]; then
-        error1utest "Failed to deploy rdee-python via setenv deploy-mode with profile together"
+        error1utest "Failed to deploy $proj via setenv+ deploy-mode with profile together"
+    fi
+    . test2.sh
+    eval $testCommand
+    if [[ $? != 0 ]]; then
+        error1utest "Failed to load $proj via setenv+ deploy-mode with profile together"
     fi
     success "setenv+ mode passed"
-    unset PYTHONPATH
     rm -rf export
     rm test2.sh
+
+    unset PYTHONPATH
 
     #@ .test-module
     progress "deploy via module mode"
 
     bash ./deploy.Linux.sh -d module >&/dev/null
-    if [[ ! -e $scriptDir/export/modulefiles ]]; then
-        error1utest "Failed to deploy rdee-python via module deploy-mode"
+    if [[ ! -e $scriptDir/export/modulefiles/$proj ]]; then
+        error1utest "Failed to deploy $proj via module deploy-mode"
     fi
     if module list 2>/dev/null; then
         bash ./deploy.Linux.sh -d module -p test2.sh >&/dev/null
         . test2.sh
-        module load rdee
-        python -c "import rdee"
+        module load $proj
+        eval $testCommand
         if [[ $? != 0 ]]; then
-            error1utest "Failed to deploy rdee-python via module deploy-mode with profile together"
+            error1utest "Failed to deploy $proj via module deploy-mode with profile together"
         fi
-        module unload rdee
+        progress "works well via modulefile"
+        module unload $proj
         rm test2.sh
     fi
     success "module mode passed"
@@ -361,10 +372,10 @@ else
     progress "deploy via module+ mode"
 
     bash ./deploy.Linux.sh -d module+ -m tools >&/dev/null
-    if [[ ! -d tools/rdee-python ]]; then
-        error1utest "Failed to deploy rdee-python via module+ deploy-mode"
+    if [[ ! -d tools/$proj ]]; then
+        error1utest "Failed to deploy $proj via module+ deploy-mode"
     fi
-    rm -f tools/rdee-python
+    rm -f tools/$proj
     success "module+ mode passed"
 
     rm -rf export
