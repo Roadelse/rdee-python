@@ -368,6 +368,8 @@ else
     fi
     success "module mode passed"
 
+    rm -rf export
+
     #@ .test-module+
     progress "deploy via module+ mode"
 
