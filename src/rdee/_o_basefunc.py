@@ -56,3 +56,37 @@ def load_module_from_path(module_path, module_name=None):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def zip_withkey(D: dict):
+    """
+    zip lists with keys
+    -----------------------------------
+    2024-05-27  init
+    """
+    length = -1
+    for k, v in D.items():
+        assert hasattr(v, "__len__")
+        if length == -1:
+            length = len(v)
+        assert length == len(v), "Different length for list in zip_withkey values"
+
+    rst = []
+    keys = list(D.keys())
+    for ele in  list(zip(*list(D.values()))):
+        rst.append({keys[i]:ele[i] for i in range(len(keys))})
+    return rst
+    
+def product_withkey(D):
+    """
+    product lists with keys
+    -----------------------------------
+    2024-05-27  init
+    """
+    import itertools
+
+    rst = []
+    keys = list(D.keys())
+    for ele in itertools.product(*list(D.values())):
+        rst.append({keys[i]:ele[i] for i in range(len(keys))})
+    return rst
