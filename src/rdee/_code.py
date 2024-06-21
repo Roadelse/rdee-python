@@ -146,3 +146,15 @@ def search_api(module, api: str, alias: str = None) -> list[str]:
             continue
 
     return [_.replace('module', module.__name__ if alias is None else alias) for _ in rst]
+
+
+
+#**********************************************************************
+# this function is used to convert an enum-style class to a real enum class
+# used in: 
+#   + pestc4py.PETSc.KSP.ConvergedReason
+#**********************************************************************
+def class2enum(cls):
+    from enum import Enum
+    attrs = {name: value for name, value in cls.__dict__.items() if not name.startswith('__') and not callable(value)}
+    return Enum(cls.__name__ + 'Enum', attrs)
