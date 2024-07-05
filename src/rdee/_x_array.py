@@ -159,3 +159,11 @@ class Array:
         rst[v_last] = (i_last, len(vseq)-1)
         return rst
 
+    @staticmethod
+    def logical_and_all(*args):
+        if len(args) < 2:
+            raise RuntimeError("Should Nevev Occur")
+        if len(args) == 2:
+            return np.logical_and(args[0], args[1])
+        else:
+            return np.logical_and(args[0], Array.logical_and_all(*args[1:]))

@@ -9,6 +9,7 @@ This module contains several functions for os oprations, which may not directly 
 import os
 import os.path
 import shutil
+import subprocess
 
 from rdee import _o_globalstate as ogs
 
@@ -41,3 +42,26 @@ def rmrf(directory: str, use_strict: bool = False, remain_itself: bool = False) 
             if use_strict:  #@sk raise error if use_strict
                 raise
     
+def shrun(cmd: str, logfile = "", error_on_fail=False, merge_stderr=True):
+    """
+    run bash commands
+    @2024-07-05 15:49:53
+    """
+    if logfile:
+        # arg:merge_stderr doesn't work here
+        robj = subprocess.run(f"{cmd} >& {logfile}", shell=True, executable="/bin/bash", text=True)
+    else:
+        if merge_stderr:
+            robj = subprocess.run(cmd, shell=True, executable="/bin/bash", text=True, stdout=subprocess.PIPE)
+        else:
+            robj = subprocess.run(cmd, shell=True, executable="/bin/bash", text=True, capture_output=True)
+
+
+    if error_on_fail:
+        if robj.returncode != 0:
+            raise RuntimeError(f"Error in {cmd=}, returncode={robj.returncode}")
+
+    if merge_stderr:
+        return (robj.returncode, robj.stdout.strip())
+    else:
+        return (robj.returncode, robj.stdout.strip(), robj.stderr.strip())

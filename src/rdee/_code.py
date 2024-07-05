@@ -88,6 +88,7 @@ def has_return_value(func):
 #**********************************************************************
 # this function is used to check if a function has a return value
 # Use dir(), pkgutil. may work as well
+#   * cannot use __all__ since it only works in module
 #**********************************************************************
 def get_submodules(module, alias: str = None):
     import types
@@ -127,12 +128,39 @@ def get_submodules(module, alias: str = None):
         delattr(get_submodules, 'obj_set')
         if alias is not None:
             rst = {_.replace(module.__name__, alias, 1) for _ in rst}
-        return list(rst)        
+        return list(rst)
 
+
+def get_apis(module):
+    import types
+
+    submodules = get_submodules(module, 'module')
+    rst = []
+    for sm in submodules:
+        for item in dir(sm):
+            if sm.startswith("_"):
+                continue
+            
+            attr_str = f'{sm}.{item}'
+            try:
+                itemO = eval(attr_str)
+            except:
+                continue
+            
+            if isinstance(itemO, types.ModuleType):
+                continue
+            
+            rst.append()
+
+        try:
+            if hasattr(eval(sm), api):
+                rst.append(f'{sm}.{api}')
+        except:
+            continue
 
 
 #**********************************************************************
-# this function is used to get all submodules for target module
+# this function is used to search apis for a given object
 #**********************************************************************
 def search_api(module, api: str, alias: str = None) -> list[str]:
     submodules = get_submodules(module, 'module')
@@ -158,3 +186,11 @@ def class2enum(cls):
     from enum import Enum
     attrs = {name: value for name, value in cls.__dict__.items() if not name.startswith('__') and not callable(value)}
     return Enum(cls.__name__ + 'Enum', attrs)
+
+
+
+
+#**********************************************************************
+# Class for re-building api tree
+#**********************************************************************
+class 

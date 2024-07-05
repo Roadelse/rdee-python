@@ -35,6 +35,69 @@ def has_stdout_handler(lgr: logging.Logger) -> bool:
     return False
 
 
+
+class ref_ColorFormatter(logging.Formatter):
+    """
+    from https://stackoverflow.com/questions/384076/how-can-i-color-python-logging-output
+    """
+    grey = "\x1b[38;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    bold_red = "\x1b[31;1m"
+    reset = "\x1b[0m"
+    format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+
+    FORMATS = {
+        logging.DEBUG: grey + format + reset,
+        logging.INFO: grey + format + reset,
+        logging.WARNING: yellow + format + reset,
+        logging.ERROR: red + format + reset,
+        logging.CRITICAL: bold_red + format + reset
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+
+
+class ColorFormatter(logging.Formatter):
+    """
+    @2024-07-05 15:42:04
+    """
+
+    FORMATS = {
+        logging.DEBUG: "\033[4m%(asctime)s\033[0m (\033[1m%(filename)s:%(lineno)d | %(funcName)s\033[0m) [%(levelname)s] %(message)s",
+        logging.INFO: "\033[4m%(asctime)s\033[0m (\033[1m%(filename)s:%(lineno)d | %(funcName)s\033[0m) \033[36m[%(levelname)s]\033[0m %(message)s",
+        logging.WARNING: "\033[4m%(asctime)s\033[0m (\033[1m%(filename)s:%(lineno)d | %(funcName)s\033[0m) \033[33m[%(levelname)s]\033[0m %(message)s",
+        logging.ERROR: "\033[4m%(asctime)s\033[0m (\033[1m%(filename)s:%(lineno)d | %(funcName)s\033[0m)  \033[31m[%(levelname)s]\033[0m %(message)s",
+        logging.CRITICAL: "\033[4m%(asctime)s\033[0m (\033[1m%(filename)s:%(lineno)d | %(funcName)s\033[0m) \033[31;1m[%(levelname)s]\033[0m %(message)s"
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        date_format = "%Y-%m-%d %H:%M:%S"
+        formatter = logging.Formatter(log_fmt, datefmt=date_format)
+        return formatter.format(record)
+
+
+def fastLogger(name="root", level=logging.INFO):
+    """
+    @2024-07-05 15:35:43
+    """
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        logger.setLevel(level)
+        sh = logging.StreamHandler(sys.stdout)
+        # fmt = logging.Formatter("\033[4m%(asctime)s\033[0m  (\033[1m%(filename)s:%(lineno)d | %(funcName)s\033[0m) [%(levelname)s] - %(message)s")
+        sh.setFormatter(ColorFormatter())
+        # sh.setLevel(level)
+        logger.addHandler(sh)
+    return logger
+
+
+
 def getLogger(name, configfile: str = "logging.config", clevel = logging.NOTSET, flevel = logging.NOTSET, fpath: str = "", propagate: bool = True) -> logging.Logger:
     """
     This function aims to get a logging.Logger according to arg:name, after loading local selected/default config file.
@@ -111,5 +174,4 @@ def getLogger(name, configfile: str = "logging.config", clevel = logging.NOTSET,
     #@sk </core>
 
     return logger
-
 
