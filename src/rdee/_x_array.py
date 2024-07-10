@@ -6,6 +6,8 @@ This module contains several functions with relation to array operations
 """
 from __future__ import annotations
 
+
+import sys
 from typing import Sequence
 from enum import Enum
 from collections import OrderedDict
@@ -167,3 +169,49 @@ class Array:
             return np.logical_and(args[0], args[1])
         else:
             return np.logical_and(args[0], Array.logical_and_all(*args[1:]))
+        
+    
+    #**********************************************************************
+    # this function is a "map" of function np.argwhere
+    #**********************************************************************
+    @staticmethod
+    def ind_eq_map(seq, subseq, **kwargs):
+        """
+        -----------------------------------------
+        Last Update @ 2024-07-09 09:22:17
+        """
+
+        allowMissing = False
+        allowRepeat = False
+        autoSort = True
+        if 'allowMissing' in kwargs:
+            allowMissing = kwargs['allowMissing']
+        if 'allowRepeat' in kwargs:
+            allowRepeat = kwargs['allowRepeat']
+        if 'autoSort' in kwargs:
+            autoSort = kwargs['autoSort']
+
+        seq_np = np.array(seq)
+        if seq_np.ndim != 1:
+            raise TypeError(f"arg:seq must be an 1-dimensional arryLike variable, now ndim={seq.ndim}")
+
+        res = []
+        for e in subseq:
+            poss = np.argwhere(seq_np == e).reshape(-1)
+            if poss.size == 0:
+                if not allowMissing:
+                    print(f"Error in function<ind_eq_map> cannot find value {e}!")
+                    sys.exit(1)
+            elif poss.size > 1:
+                if allowRepeat:
+                    res.extend(poss)  # it's ok for a list extending an nd-array
+                else:
+                    print(f"Error in function<ind_eq_map> : value {e} repeats! set allowRepeat if it is ok!")
+                    sys.exit(1)
+            else:
+                res.extend(poss)
+
+        if autoSort:
+            res.sort()
+
+        return res
