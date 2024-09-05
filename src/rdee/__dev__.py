@@ -13,7 +13,9 @@ import os.path
 import glob
 import json
 
-from ._o_globalstate import logger
+import jinja2
+
+from ._o_state import logger
 
 def update_jj2():
     myDir = os.path.dirname(os.path.abspath(__file__))
@@ -50,3 +52,11 @@ def update_jj2():
 
     if modified:
         json.dump(jj2_status, open("jj2_status_file", "w"))
+
+
+def export():
+    """
+    To Be Deved
+    Aiming to export partial entities, such as functions or classes to standalone version
+    """
+    

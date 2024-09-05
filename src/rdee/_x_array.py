@@ -14,7 +14,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from ._o_globalstate import logger
+from ._o_state import logger
 from ._o_error import ShouldNeverSeeError
 
 
@@ -163,6 +163,10 @@ class Array:
 
     @staticmethod
     def logical_and_all(*args):
+        """
+         -----------------------------------------
+        Last Update @ 2024-07-15 13:40:30
+        """
         if len(args) < 2:
             raise RuntimeError("Should Nevev Occur")
         if len(args) == 2:

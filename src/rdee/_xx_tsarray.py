@@ -13,7 +13,7 @@ from enum import Enum
 
 import numpy as np
 from typing import Sequence
-from ._o_globalstate import logger
+from ._o_state import logger
 from ._x_time import Time
 from ._o_error import ShouldNeverSeeError
 from ._x_array import Array, DRPC

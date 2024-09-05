@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 
 from typing import Sequence, Any
 
-from ._o_globalstate import logger, strict
+from ._o_state import logger, strict
 
 class Time:
     def __init__(self, *args, **kwargs):

@@ -90,3 +90,4 @@ def product_withkey(D):
     for ele in itertools.product(*list(D.values())):
         rst.append({keys[i]:ele[i] for i in range(len(keys))})
     return rst
+

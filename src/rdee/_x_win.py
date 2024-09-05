@@ -48,7 +48,7 @@ def GetShortCut(shortcut):
 
 #@ func::path2wsl
 def path2wsl(path: str, require_existed: bool = False):
-    from ._o_globalstate import logger
+    from ._o_state import logger
 
     # print(logger)
     # print(id(logger))
@@ -88,7 +88,7 @@ def path2wsl(path: str, require_existed: bool = False):
 
 #@ func::path2win
 def path2win(path: str, require_existed: bool = False):
-    from ._o_globalstate import logger
+    from ._o_state import logger
 
     if re.match(r"[A-Z]:\\", path):
         if require_existed:

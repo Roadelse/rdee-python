@@ -1,0 +1,1 @@
+$env:PYTHONPATH = "<<deploydir>>\..\src;" + $env:PYTHONPATH

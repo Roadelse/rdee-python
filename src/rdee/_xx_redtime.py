@@ -18,9 +18,9 @@ from pandas import Timestamp, Timedelta
 from typing import Sequence, Any
 from enum import Enum, auto
 
-from ._o_globalstate import logger, strict
+from ._o_state import logger, strict
 from ._o_error import ShouldNeverSeeError
-from ._o_basefunc import isinstanceAll
+from ._o_funcs import isinstanceAll
 
 
 class _time(ABC):
