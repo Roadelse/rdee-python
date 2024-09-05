@@ -7,7 +7,7 @@ import logging
 import shutil
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
-from rdee._o_logging import getLogger, fastLogger
+from rdee._o_logging import getLogger, fastLogger, resetLogger, rmLogger
 from rdee import utest
 
 
@@ -99,6 +99,11 @@ datefmt=%Y-%m-%d %H:%M:%S
         self.assertEqual(2, len(open("test1.log").readlines()))
         self.assertEqual(2, len(open("test2.log").readlines()))
 
+        resetLogger(logger)
+        resetLogger(logger1)
+        resetLogger(logger2)
+
+
     def test_logFilter(self):
         """
         Set env:reDebugTargets to debug selective targets
@@ -121,6 +126,8 @@ datefmt=%Y-%m-%d %H:%M:%S
         self.assertIn("in f2", content)
         self.assertNotIn("in f1", content)
 
+        resetLogger(logger)
+
     def test_fastLogger(self):
         """
         Just ensure no errors
@@ -131,6 +138,25 @@ datefmt=%Y-%m-%d %H:%M:%S
         os.environ["LLTEMP1"] = "debug"
         logger2 = fastLogger("test_fastLogger_2", "LLTEMP1")
         logger2.debug("aha")
+        resetLogger(logger)
+        resetLogger(logger2)
+
+    def test_resetLogger(self):
+        logger1 = getLogger("test_resetLogger", fpath="a.log")
+        self.assertEqual(2, len(logger1.handlers))
+        resetLogger(logger1)
+        self.assertEqual(0, len(logger1.handlers), str(logger1.handlers))
+
+    def test_rmLogger(self):
+        loggerDict = logging.Logger.manager.loggerDict
+        logger1 = getLogger("test_rmLogger", fpath="a.log")
+        self.assertTrue("test_rmLogger" in loggerDict)
+        rmLogger("test_rmLogger")
+        self.assertTrue("test_rmLogger" not in loggerDict)
+        logger2 = getLogger("test_rmLogger", fpath="a.log")
+        self.assertNotEqual(id(logger1), id(logger2))
+        resetLogger(logger2)
+
 
 
 

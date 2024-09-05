@@ -6,16 +6,92 @@ on:
       - dev
 
 jobs:
-  test:
+  inLinux:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
-    - name: Setup Conda
-      uses: conda-incubator/setup-miniconda@v2
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10' 
 
-    - name: Execute test script
+    - name: Cache pip
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+    - name: Deploy rdee-python
       run: |
-        bash deploy/deploy.Linux.sh -uv
+        cd ..
+        git clone https://github.com/Roadelse/rdee-core.git
+        cd rdee-core
+        git checkout dev
+        cd deploy
+        python deploy.py -w rdee-python
+    
+    - name: Run unit tests with no 3rd-party packages
+      run: |
+        source ../rdee-core/deploy/export.Linux/setenv.rdee-core.sh
+        cd utest
+        python -m rdee utest   # run unittest with no third-party packages
+  
+    - name: install python packages
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run unit test with full requirements installed
+      run: |
+        source ../rdee-core/deploy/export.Linux/setenv.rdee-core.sh
+        cd utest
+        python -m rdee utest   # run unittest with full requirements installed
+
+  inWindows:
+    runs-on: windows-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10' 
+
+    - name: Cache pip
+      uses: actions/cache@v4
+      with:
+        path: '%USERPROFILE%\\AppData\\Local\\pip\\Cache'
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+
+    - name: Deploy rdee-python
+      shell: pwsh
+      run: |
+        cd ..
+        git clone https://github.com/Roadelse/rdee-core.git
+        cd rdee-core
+        git checkout dev
+        cd deploy
+        python deploy.py -w rdee-python
+
+    - name: Run unit tests with no 3rd-party packages
+      shell: pwsh
+      run: |
+        Import-Module ../rdee-core/deploy/export.Windows/rdee-core.psd1
+        cd utest
+        python -m rdee utest  # run unittest with no third-party packages
+
+    - name: install python packages
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run unit test with full requirements installed
+      shell: pwsh
+      run: |
+        Import-Module ../rdee-core/deploy/export.Windows/rdee-core.psd1
+        cd utest
+        python -m rdee utest  # run unittest with full requirements installed

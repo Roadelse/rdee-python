@@ -102,7 +102,7 @@ def shrun(cmd: str, shell="auto", logfile = "", ensure_noerror=False):
 
     if ensure_noerror:
         if robj.returncode != 0:
-            raise RuntimeError(f"Error in {cmd=}, returncode={robj.returncode}")
+            raise RuntimeError(f"Error in {cmd=}, returncode={robj.returncode}, info={robj.stdout}")
 
     return (robj.returncode, robj.stdout.strip() if robj.stdout else "")
 

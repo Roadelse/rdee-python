@@ -232,3 +232,46 @@ def getLogger(name, configfile: str = "logging.config", clevel = logging.NOTSET,
 
     return logger
 
+
+def resetLogger(name_or_logger: str|logging.Logger = "root"):
+    logger_dict = logging.Logger.manager.loggerDict
+
+    if isinstance(name_or_logger, str):
+        name = name_or_logger
+        if name != "root" or name not in logger_dict:
+            return
+        logger = logger_dict[name]
+    elif isinstance(name_or_logger, logging.Logger):
+        logger = name_or_logger
+    else:
+        raise TypeError
+    
+
+    for handler in logger.handlers:
+        handler.close()
+    logger.handlers.clear()
+    logger.filters.clear()
+
+    logger.setLevel(logging.NOTSET)
+
+def rmLogger(name_or_logger: str|logging.Logger = "root"):
+    logger_dict = logging.Logger.manager.loggerDict
+    if isinstance(name_or_logger, str):
+        name = name_or_logger
+        if name == "root":
+            resetLogger(name)
+            return
+        elif name not in logger_dict:
+            return
+        logger = logger_dict[name]
+    elif isinstance(name_or_logger, logging.Logger):
+        logger = name_or_logger
+        name = logger.name
+    else:
+        raise TypeError
+    
+    for handler in logger.handlers:
+        handler.close()
+    logger.handlers.clear()
+    del logger_dict[name]
+    del logger

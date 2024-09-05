@@ -18,6 +18,10 @@ class Test_PYCODE(utest.IFixture, unittest.TestCase):
         ---------------------------------
         """
         #@ test-general
+        if not code.use_libcst:
+            print("Do not possess pycode_* apis in this python environment, skip this test")
+            return
+        
         pytext = [
             "import sys\nimport shutil, logging as lg",
             "from os import makedirs as mk, system, remove as rm",
@@ -34,9 +38,13 @@ class Test_PYCODE(utest.IFixture, unittest.TestCase):
     
     def test_pycode_export(self):
         """
-        Last Update: @2024-08-30 21:19:22
+        Last Update: @2024-09-06 13:45:55
         ---------------------------------
         """
+        if not code.use_libcst:
+            print("Do not possess pycode_* apis in this python environment, skip this test")
+            return
+        
         import rdee
         pynode = code.pycode_module(rdee)
         pynode.export_fcs("a.py", "isinstanceAll")

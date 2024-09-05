@@ -5,6 +5,7 @@ import os
 import unittest
 import logging
 import shutil
+import platform
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
 from rdee._o_logging import getLogger, fastLogger
@@ -15,22 +16,22 @@ from rdee._o_osf import shrun, FileOP
 class Test_OSH(utest.IFixture, unittest.TestCase):
     def test_shrun(self):
         rcode, rst = shrun("echo 'hello'")
-        self.assertEqual("hello", rst)
+        self.assertEqual("hello" if platform.system() == "Linux" else "'hello'", rst)
         self.assertEqual(0, rcode)
 
         rcode, rst = shrun("echo 'hello'", logfile="ade.txt")
         self.assertEqual("", rst)
         self.assertEqual(0, rcode)
         with open("ade.txt", "r") as f:
-            self.assertEqual("hello\n", f.read())
+            self.assertEqual("hello\n" if platform.system() == "Linux" else "'hello'\n", f.read())
         
         if state.inWSL or state.system == "Windows":
             rcode, rst = shrun("echo hello", "pwsh")
             self.assertEqual("hello", rst)
             self.assertEqual(0, rcode)
 
-            rcode, rst = shrun("echo hello", "cmd")
-            self.assertEqual("hello", rst)
+            rcode, rst = shrun("echo 'hello'", "cmd")
+            self.assertEqual("'hello'", rst)
             self.assertEqual(0, rcode)
     
 

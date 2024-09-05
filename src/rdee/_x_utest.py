@@ -240,4 +240,6 @@ def dotest(targets: list[str], test_directory: str = ".") -> None :
             continue
         suite.addTest(allTestCases[tcn](tmn))
 
-    runner.run(suite)
+    rst = runner.run(suite)
+    if not rst.wasSuccessful():
+        sys.exit(101)
