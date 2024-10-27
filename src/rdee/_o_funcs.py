@@ -29,6 +29,28 @@ def singleton(orig_cls):
     #@sk <return/>
     return orig_cls
 
+def noinstance(orig_cls):
+    """
+    Last Update: @2024-09-09 16:25:08 | funcs.noinstance
+    ---------------------------------
+    A class decorator, used to ensure a class cannot be called. i.e., cannot create its instance
+
+    :param orig_cls: origincal class, since it is used to decorate a class
+    """
+    #@ Prepare
+    from functools import wraps
+
+    orig_new = orig_cls.__new__
+    instance = None
+
+    #@ Core | define a new __new__ method
+    @wraps(orig_cls.__new__)
+    def __new__(cls, *args, **kwargs):
+        raise TypeError(f"Error! cannot initialize class {cls.__qualname__}")
+    orig_cls.__new__ = __new__
+
+    return orig_cls
+
 
 def is_sequence(obj):
     return isinstance(obj, Sequence) and not isinstance(obj, str)
