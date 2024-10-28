@@ -31,7 +31,7 @@ if sys.version_info < (3, 10):
 __filedir__ = os.path.dirname(__file__)
 
 
-def deploy(executables: list[str] | str = ""):
+def deploy(projdir: str, executables: list[str] | str = ""):
     """
     Last Update: @2024-09-04 17:04:01
     ---------------------------------
@@ -40,12 +40,15 @@ def deploy(executables: list[str] | str = ""):
 
     # @ Prepare
     # @ .base-info
-    with open(f"{deploydir}/../VERSION") as f:
+    with open(f"{projdir}/VERSION") as f:
         version = f.read().strip()
-    temparams = {"version": version,
-                 "project": projname,
-                 "deploydir": deploydir,
-                 "rehome": args.rehome if args.rehome else os.getenv("HOME")}
+    temparams = {
+        "projdir": projdir,
+        "version": version,
+        "project": projname,
+        "deploydir": deploydir,
+        "rehome": args.rehome if args.rehome else os.getenv("HOME")
+    }
 
     logger.debug(f"{executables=}")
 
@@ -94,7 +97,7 @@ def deploy(executables: list[str] | str = ""):
         logger.info("Generating setenv script")
         setenvfile = f"{exportdir}/setenv.{projname}.sh"
 
-        tpldir = f"{deploydir}/template"
+        tpldir = f"{projdir}/deploy/template"
         tplfiles.append(f"{tpldir}/template.main.sh")
         if isWSL and os.path.exists(f"{tpldir}/template.wsl.sh"):
             temparams["winuser"] = shrun("echo %USERNAME%", shell="cmd", ensure_noerror=True)[1]
@@ -105,10 +108,13 @@ def deploy(executables: list[str] | str = ""):
             with_cmds = []
             for w in args.withlist:
                 logger.info(f"  >> Handling additional repo: {w}")
-                deploy_dir_w = os.path.abspath(f"{deploydir}/../../{w}/deploy")
+                if os.path.exists(w):
+                    deploy_dir_w = os.path.join(w, "deploy")
+                else:
+                    deploy_dir_w = os.path.abspath(f"{projdir}/../{w}/deploy")
                 deploy_script = f"{deploy_dir_w}/deploy.py"
                 assert os.path.exists(deploy_script)
-                with_cmds.append(shrun(f"{deploy_script} -a -s -i {deploy_dir_w}", ensure_noerror=True)[1])
+                with_cmds.append(shrun(f"{deploy_script} -a -s -o {deploy_dir_w}", ensure_noerror=True)[1])
             with_cmds = [cmd if cmd.rstrip().endswith("load") else cmd + " load" for cmd in with_cmds]
             # print(with_cmds)
             tplfiles.append("\n".join(with_cmds))
@@ -129,6 +135,8 @@ def deploy(executables: list[str] | str = ""):
 
         # @ ..link | link executables into bin
         exportdir = f"{deploydir}\\export.Windows"
+        temparams["exportdir"] = exportdir
+
         os.makedirs(f"{exportdir}", exist_ok=True)
         if executables:
             logger.info("Linking executables")
@@ -149,14 +157,14 @@ def deploy(executables: list[str] | str = ""):
         # @ ..setenv | Generate powershell module files
         logger.info("Generating setenv script")
         os.chdir(exportdir)
-        if os.path.exists(f"{deploydir}\\template\\template.main.psm1"):
+        if os.path.exists(f"{projdir}\\deploy\\template\\template.main.psm1"):
             use_module = True
-            render_file(f"{deploydir}\\template\\template.main.psm1", f"{projname}.psm1", temparams)
-            render_file(f"{deploydir}\\template\\template.main.psd1", f"{projname}.psd1", temparams)
+            render_file(f"{projdir}\\deploy\\template\\template.main.psm1", f"{projname}.psm1", temparams)
+            render_file(f"{projdir}\\deploy\\template\\template.main.psd1", f"{projname}.psd1", temparams)
             envscript = f"{projname}.psm1"
-        elif glob.glob(f"{deploydir}\\template\\template.main.ps1"):
+        elif glob.glob(f"{projdir}\\deploy\\template\\template.main.ps1"):
             use_module = False
-            render_file(f"{deploydir}\\template\\template.main.ps1", f"{projname}.ps1", temparams)
+            render_file(f"{projdir}\\deploy\\template\\template.main.ps1", f"{projname}.ps1", temparams)
             envscript = f"{projname}.ps1"
         else:
             logger.info("No powershell template, return now")
@@ -165,10 +173,13 @@ def deploy(executables: list[str] | str = ""):
             with open(envscript, "a") as f:
                 for w in args.withlist:
                     logger.info(f"  >> Handling additional repo: {w}")
-                    deploy_dir_w = os.path.abspath(f"{deploydir}/../../{w}/deploy")
-                    deploy_script = f"{deploy_dir_w}/deploy.py"
+                    if os.path.exists(w):
+                        deploy_dir_w = os.path.join(w, "deploy")
+                    else:
+                        deploy_dir_w = os.path.abspath(f"{deploydir}\\..\\..\\{w}/deploy")
+                    deploy_script = f"{deploy_dir_w}\\deploy.py"
                     assert os.path.exists(deploy_script)
-                    cmd = shrun(f"python {deploy_script} -a -s -i {deploy_dir_w}", shell="cmd", ensure_noerror=True)[1]
+                    cmd = shrun(f"python {deploy_script} -a -s -o {deploy_dir_w}", shell="cmd", ensure_noerror=True)[1]
                     f.write(f"\n{cmd}\n")
 
         # @ ..addsource | Add Import-Module statement into target script
@@ -183,7 +194,7 @@ def deploy(executables: list[str] | str = ""):
             else:
                 asstr = textwrap.dedent(f"""\
                     # ************************ [{projname}]
-                    & {exportdir}\\{projname}.ps1
+                    . {exportdir}\\{projname}.ps1
 
                     """)
             if args.addsource == "stdout":
@@ -207,8 +218,9 @@ def render_file(infile: str, ofile: str, params: dict):
     for k, v in params.items():
         if f"<<{k}>>" in content:
             content = content.replace(f"<<{k}>>", v)
-    if re.search(r"<<\w+>>", content):
-        logger.error("Missing items to be replaced in template!")
+    rerst = re.search(r"<<\w+>>", content)
+    if rerst:
+        logger.error(f"Missing items ({rerst.group()}) to be replaced in template!")
         raise RuntimeError
 
     with open(ofile, "w") as f:
@@ -333,14 +345,16 @@ def add_source_to_script(exportdir: str, projname: str):
         update_block(target_script, asstr)
 
 
-def main(argList=None):
+def main(projdir: str):
     global args, logger, isWSL, deploydir, projname
+
+    assert os.path.exists(projdir)
 
     isWSL = bool(os.getenv("WSL_DISTRO_NAME"))
 
     parser = argparse.ArgumentParser(description=f"""rdee-* series deployment script""")
     parser.add_argument('--rehome', '-r', help='Set home directory')
-    parser.add_argument('--deploydir', '-i', default=".", help='Set deployment directory')
+    parser.add_argument('--deploydir', '-o', default=".", help='Set deployment directory')
     parser.add_argument('--module', '-m', action="store_true", help='use module')
     parser.add_argument('--executables', '-e', nargs='+', default=None, help='Select executables or executables directory to be linked')
 
@@ -349,7 +363,7 @@ def main(argList=None):
     parser.add_argument('--addsource', '-a', default=None, nargs='?', const="stdout", help='add source statement in target script')
     parser.add_argument('--withlist', '-w', nargs="+", help='Union some other tools together')
 
-    args = parser.parse_args(argList)
+    args = parser.parse_args()
 
     if args.debug:
         loglevel = "debug"
@@ -359,8 +373,8 @@ def main(argList=None):
         loglevel = "info"
 
     deploydir = os.path.abspath(args.deploydir)
-    assert os.path.basename(deploydir) == "deploy"
-    projname = os.path.basename(os.path.abspath(deploydir + "/.."))
+    # assert os.path.basename(deploydir) == "deploy"
+    projname = os.path.basename(projdir)
 
     logger = fastLogger(name=projname, level=loglevel)
     logger.debug(f"{deploydir=}")
@@ -368,8 +382,8 @@ def main(argList=None):
     if args.executables:
         exes = args.executables
     else:
-        exes = glob.glob(f"{deploydir}/../src/**/bin", recursive=True)
-    return deploy(exes)
+        exes = glob.glob(f"{projdir}/src/**/bin", recursive=True)
+    return deploy(projdir, exes)
 
 
 # @ rdeexpo
@@ -738,8 +752,3 @@ def revenv(codelines: str | list[str], rmep_func: str = "rmep"):
             rst += f"{L}\n"
 
     return rst
-
-
-# @ entry
-if __name__ == "__main__":
-    main()

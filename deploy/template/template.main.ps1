@@ -1,1 +1,1 @@
-$env:PYTHONPATH = "<<deploydir>>\..\src;" + $env:PYTHONPATH
+$env:PYTHONPATH = "<<projdir>>\src;" + $env:PYTHONPATH

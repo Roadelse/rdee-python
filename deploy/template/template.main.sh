@@ -1,1 +1,1 @@
-export PYTHONPATH=<<deploydir>>/../src:$PYTHONPATH
+export PYTHONPATH=<<projdir>>/src:$PYTHONPATH
