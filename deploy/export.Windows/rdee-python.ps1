@@ -1,1 +1,0 @@
-$env:PYTHONPATH = "D:\recRoot\GitRepos\rdee-python\deploy\..\src;" + $env:PYTHONPATH

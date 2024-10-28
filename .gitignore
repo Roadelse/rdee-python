@@ -1,4 +1,7 @@
-/deploy/export/
+/deploy/export.Linux/
+/deploy/export.Windows/
+
+.vscode/
 __pycache__/
 *egg-info/
 

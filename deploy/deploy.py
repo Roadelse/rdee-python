@@ -5,8 +5,13 @@
 import sys
 import os
 __filedir__ = os.path.dirname(__file__)
-sys.path.append(f"{__filedir__}/../../rdee-core/deploy/tools")
-import deployer
+
+# @ import-compatibly
+try:
+    sys.path.append(f"{__filedir__}/../../rdee-core/deploy/tools")
+    import deployer
+except:
+    from tools import deployer
 
 
 if __name__ == "__main__":

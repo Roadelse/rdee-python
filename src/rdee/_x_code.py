@@ -17,12 +17,12 @@ try:
     use_libcst = True
 except:
     use_libcst = False
-    
+
 
 class pycode_func:
     def __new__(self, *args, **kwargs):
         raise TypeError("Error! cannot initialize class pycode")
-    
+
     @classmethod
     def has_return_value(func):
         """
@@ -48,6 +48,7 @@ class pycode_func:
             ---------------------------------
             This class is used in libcst for collecting caller names from a libcst node, i.e., function name or class name
             """
+
             def __init__(self):
                 self.calls = []
 
@@ -76,6 +77,7 @@ class pycode_func:
                 - from os import makedirs as mkd
                     we got mkd
             """
+
             def __init__(self, module):
                 self.module = module
                 self.import_obj_names = []
@@ -100,18 +102,18 @@ class pycode_func:
             # print(f"{pycodes=}")
             if isinstance(pycodes, str):
                 pass
-            elif isinstance(pycodes, Sequence):  #@| Note str is Sequence as well (@2024-08-30 21:29:17)
+            elif isinstance(pycodes, Sequence):  # @| Note str is Sequence as well (@2024-08-30 21:29:17)
                 pycodes = "\n".join(pycodes)
             else:
                 raise TypeError
-            
+
             tr = cst.parse_module(pycodes)
             collector = pycode_func._GetImportObjNameCollector(tr)
             _ = tr.visit(collector)
             return collector.import_obj_names
 
 
-def norm_skComment(C, level = 1, language = 'python', commentSymbol = None, style='default') : # normalize skeleton comments
+def norm_skComment(C, level=1, language='python', commentSymbol=None, style='default'):  # normalize skeleton comments
     """
     this function is used to perform pretty and prescribed skeleton comments
     """
@@ -120,15 +122,15 @@ def norm_skComment(C, level = 1, language = 'python', commentSymbol = None, styl
     if commentSymbol:
         cl = commentSymbol
     else:
-        if language == 'ncl' :
-            cl = ';' # comment label
+        if language == 'ncl':
+            cl = ';'  # comment label
         elif language == 'python':
             cl = '#'
         else:
             raise RuntimeError('unknwon language : {}'.format(language))
 
     if style == 'default':
-        if level == 1: # final 60
+        if level == 1:  # final 60
             charL = '>'
             charR = '<'
             lenCharL = ((59 - 4) - len(C)) // 2
@@ -145,9 +147,9 @@ def norm_skComment(C, level = 1, language = 'python', commentSymbol = None, styl
     # print(res)
 
 
-#**********************************************************************
+# **********************************************************************
 # this function aims to reformat the skeleton comments
-#**********************************************************************
+# **********************************************************************
 def reformat_comments(content, style='default'):
     if isinstance(content, str):
         lines = content.splitlines()
@@ -155,7 +157,7 @@ def reformat_comments(content, style='default'):
         lines = content
     else:
         raise TypeError
-    
+
     for L in lines:
         if L[0] in ('#', '!', ';', '%'):
             commentSymbol = L[0]
@@ -169,7 +171,7 @@ def reformat_comments(content, style='default'):
         L = lines[i]
         if not L.lstrip().startswith(commentSymbol):
             continue
-        
+
         rst = re.search(rf' *{commentSymbol} *<L(\d)>', L)
         if rst:
             rerst = re.search(r'( *).*?<L(\d)> (.*)', L)
@@ -177,9 +179,8 @@ def reformat_comments(content, style='default'):
             cLevel = int(rerst.group(2))
             leadingSpaces = rerst.group(1)
             lines[i] = f"{leadingSpaces}{norm_skComment(actual_comment, cLevel, commentSymbol=commentSymbol, style=style)}"
-    
-    return '\n'.join(lines)
 
+    return '\n'.join(lines)
 
 
 # #**********************************************************************
@@ -189,7 +190,7 @@ def reformat_comments(content, style='default'):
 # #**********************************************************************
 # def get_submodules(module, alias: str = None):
 #     import types
-    
+
 #     assert isinstance(module, types.ModuleType)
 
 #     if not hasattr(get_submodules, 'obj_set'):
@@ -197,12 +198,12 @@ def reformat_comments(content, style='default'):
 #         setattr(get_submodules, 'obj_set', set())
 
 #     get_submodules.obj_set.add(module.__name__)
-    
+
 #     try:  #>- check fully initialized
 #         dir(module)
 #     except:
 #         return []
-        
+
 #     # print(mod_str)
 #     # time.sleep(0.1)
 #     for img in dir(module):
@@ -218,7 +219,7 @@ def reformat_comments(content, style='default'):
 #            attr.__name__.startswith(module.__name__):
 #             # >- 1. check module; 2. ensure no circular; 3.avoid external module
 #             get_submodules(attr)
-    
+
 #     # >>>>>>> remove the obj_set after the whole statistics
 #     if 'outermost_flag' in locals():
 #         rst = get_submodules.obj_set
@@ -237,16 +238,16 @@ def reformat_comments(content, style='default'):
 #         for item in dir(sm):
 #             if sm.startswith("_"):
 #                 continue
-            
+
 #             attr_str = f'{sm}.{item}'
 #             try:
 #                 itemO = eval(attr_str)
 #             except:
 #                 continue
-            
+
 #             if isinstance(itemO, types.ModuleType):
 #                 continue
-            
+
 #             rst.append()
 
 #         try:
@@ -273,27 +274,25 @@ def reformat_comments(content, style='default'):
 #     return [_.replace('module', module.__name__ if alias is None else alias) for _ in rst]
 
 
-
-#**********************************************************************
+# **********************************************************************
 # Class for re-building api tree
-#**********************************************************************
-
+# **********************************************************************
 if use_libcst:
     class pycode_node(abc.ABC):
         def __init__(self, obj, alias, parent):
 
             self._obj = obj
-            
+
             self.alias = set()
             if alias:
                 self.alias.add(alias)
-        
+
             try:
                 self._code = textwrap.dedent(inspect.getsource(obj))
             except:
                 warnings.warn(f"Warning! Cannot get source code for object {self.name}")
                 self._code = ""
-            
+
             self._parent = None
             if parent:
                 assert isinstance(parent, pycode_module)
@@ -303,7 +302,7 @@ if use_libcst:
             self.extern_list = None
             self.parsed = False
             self.calls_parsed = False
-        
+
         @property
         def obj(self):
             return self._obj
@@ -311,7 +310,7 @@ if use_libcst:
         @property
         def code(self):
             return self._code
-        
+
         @property
         def name(self):
             return self.obj.__name__
@@ -325,7 +324,7 @@ if use_libcst:
             while node.parent:
                 node = node.parent
             return node
-        
+
         def parse_import_statements(self):
             self.import_statements = []
             for L in self.code.splitlines():
@@ -355,14 +354,13 @@ if use_libcst:
             assert inspect.ismodule(obj), f"Error! arg:obj must be a python module object, now is {type(obj)}"
             pycode_node.__init__(self, obj, alias, parent)
 
-            
             self.submodules: dict[str, pycode_module] = {}
             self.funclss: dict[str, pycode_funcls] = {}
             self.others = {}
 
             if parse:
                 self.parse()
-        
+
         def get_all_funclss(self):
             fcsA = self.funclss.copy()
             for sm, node in self.submodules.items():
@@ -390,7 +388,7 @@ if use_libcst:
 
             self.parse_calls()
             self.parsed = True
-        
+
         def parse_calls(self):
             for name, node in self.get_all_funclss().items():
                 node.parse_calls(rootmod=self)
@@ -399,7 +397,7 @@ if use_libcst:
         def show(self, recursive: bool = False):
             if not self.parsed:
                 self.parse()
-            
+
             print("Class:")
             for cf in self.funclss:
                 if cf.type == "class":
@@ -414,7 +412,6 @@ if use_libcst:
             for sm, obj in self.submodules.items():
                 print(f"{obj.alias}")
 
-
         def export_fcs(self, outfile: str, fcs) -> None:
             from ._o_funcs import isinstanceAll
 
@@ -428,7 +425,7 @@ if use_libcst:
                 if fcs not in fcsA:
                     raise RuntimeError(f"Error! Cannot locate {fcs} in module")
                 _objs = [fcsA[fcs]]
-            elif isinstance(fcs,pycode_funcls):
+            elif isinstance(fcs, pycode_funcls):
                 _objs = [fcs]
             elif isinstanceAll(fcs, pycode_funcls):
                 _objs = fcs
@@ -447,21 +444,21 @@ if use_libcst:
                 _objsDict.update(o.get_all_dependencies())
             _objs2 = list(_objsDict.values())
             # print(_objsDict)
-            
+
             for roj in _objs2:
                 import_statements.extend(roj.parent.import_statements)
             import_statements_U = [x for x in list(set(import_statements)) if 'from .' not in x]
-        
+
             objCodes = "\n\n"
             for robj in _objs2:
                 print(f"exporting {robj.name}")
                 objCodes += f"{robj.code}\n"
             # print(objCodes)
-            
+
             import_statements_UV = []
             for L in import_statements_U:
                 imported_obj_names = pycode_func.get_imported_names(L)
-                
+
                 found = False
                 for iobjn in imported_obj_names:
                     # print(f"searching |{iobjn}|")
@@ -469,23 +466,21 @@ if use_libcst:
                     if re.search(rf'\b{iobjn}\b', objCodes):
                         found = True
                         break
-        
+
                 if not found:
                     print(f"Skipping {L}")
                 else:
                     import_statements_UV.append(L)
-            
-            
+
             with open(outfile, "w") as f:
                 f.write("#!/usr/bin/env python\n")
                 f.write("# coding=utf-8\n")
                 f.write("# winexec=python\n\n")
-        
+
                 for L in import_statements_UV:
                     f.write(f"{L}\n")
-        
-                f.write(f"\n\n{objCodes}")
 
+                f.write(f"\n\n{objCodes}")
 
     class pycode_funcls(pycode_node):
         def __init__(self, obj, alias="", parent=None, parse: bool = False):
@@ -531,10 +526,10 @@ if use_libcst:
             rst[self.name] = self
             for name, node in self.innerCalls.items():
                 # print(f"searching {name}")
-                if name != self.name:  #@ note | Condition 1: self-recursive function; Condition 2: functions with same last name, i.e., rdee.logging.getLogger vs. logging.getLogger @2024-08-28 14:10:29
+                if name != self.name:  # @ note | Condition 1: self-recursive function; Condition 2: functions with same last name, i.e., rdee.logging.getLogger vs. logging.getLogger @2024-08-28 14:10:29
                     rst.update(node.get_all_dependencies())
             return rst
-            
+
 
 class shcode_func:
     def __new__(self, *args, **kwargs):
@@ -551,7 +546,7 @@ class shcode_func:
             return S
 
     @staticmethod
-    def revenv(codelines: str|list[str]):
+    def revenv(codelines: str | list[str], rmep_func: str = "rmep"):
         """
         Last Update: @2024-09-04 13:40:40
         ---------------------------------
@@ -577,7 +572,7 @@ class shcode_func:
                     inFunc = False
                 continue
             if L.startswith("alias "):
-                aliasname = re.search(r"alias +([a-zA-Z0-9._]+)=", L).group(1)
+                aliasname = re.search(r"alias .*?(\S+)=", L).group(1)
                 rst += f"unalias {aliasname}\n"
             elif L.startswith("function "):
                 funcname = re.search(r"function +(\w+)", L).group(1)
@@ -589,12 +584,12 @@ class shcode_func:
                     rhs = re.search(r"export +\w+=(.*)", L).group(1).split(":")
                     rhs.remove("$" + evname)
                     for rh in rhs:
-                        rst += f"rmep {evname} {rh}\n"
+                        rst += f"{rmep_func} {evname} {rh}\n"
                 else:
                     rst += f"unset {evname}\n"
-            elif re.search(r"^source .*setenv\..*\.sh +load$", L): #@ exp | Special case for rdee-* series deployment
+            elif re.search(r"^source +.*\.sh +load$", L):  # @ exp | Special case for rdee-* series deployment
                 rst += L.replace(" load", " unload\n")
             else:
                 rst += f"{L}\n"
-        
+
         return rst
